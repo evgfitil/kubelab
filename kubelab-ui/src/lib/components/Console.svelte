@@ -67,25 +67,30 @@
   const initializeWebSocket = () => {
     const lab_session_id = window.location.pathname.split("/")[2];
     const exercise_id = window.location.pathname.split("/")[3];
-
-    // For local development, use subdomain-based routing, for production, use path-based routing
+    // if dev mode the agentHost is 127.0.0.1.nip.io or kubelab.ch
     const isLocalDev =
       window.location.host.includes("localhost") || window.location.host.includes("nip.io");
-    const wsProtocol = isLocalDev ? "ws" : "wss";
-    const baseHost = isLocalDev ? "127.0.0.1.nip.io" : window.location.host;
-    const namespace =
-      "kubelab-" + lab_session_id + "-" + exercise_id + "-" + client.authStore.model?.id;
+    const agentHost = isLocalDev
+      ? "127.0.0.1.nip.io"
+      : window.location.host === "localhost:5173"
+        ? "kubelab.ch"
+        : window.location.host;
 
-    agentUrl = isLocalDev
-      ? `${namespace}.${baseHost}`
-      : `${baseHost}/${namespace}`;
+    agentUrl =
+      agentHost +
+      "/kubelab-" +
+      lab_session_id +
+      "-" +
+      exercise_id +
+      "-" +
+      client.authStore.model?.id;
 
     // Close the socket only if it is opened
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.close();
     }
     terminal.reset();
-    socket = new WebSocket(wsProtocol + "://" + agentUrl + "/xterm.js");
+    socket = new WebSocket((isLocalDev ? "ws" : "wss") + "://" + agentUrl + "/xterm.js");
 
     socket.binaryType = "arraybuffer";
 

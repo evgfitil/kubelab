@@ -65,59 +65,24 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 			},
 		})
 	} else {
-		// Second-rule: subdomain-based routing
-		var paths []networkingv1.HTTPIngressPath
-
-		if env.Config.Local {
-			// LOCAL: Two path rules for terminal and code-server
-			// Terminal WebSocket path (must be first - more specific)
-			paths = append(paths, networkingv1.HTTPIngressPath{
-				Path:     "/xterm.js",
-				PathType: func() *networkingv1.PathType { p := networkingv1.PathTypePrefix; return &p }(),
-				Backend: networkingv1.IngressBackend{
-					Service: &networkingv1.IngressServiceBackend{
-						Name: params.ServiceName,
-						Port: networkingv1.ServiceBackendPort{
-							Number: 8376,
-						},
-					},
-				},
-			})
-			// Code-server path (all other paths)
-			paths = append(paths, networkingv1.HTTPIngressPath{
-				Path:     "/",
-				PathType: func() *networkingv1.PathType { p := networkingv1.PathTypePrefix; return &p }(),
-				Backend: networkingv1.IngressBackend{
-					Service: &networkingv1.IngressServiceBackend{
-						Name: params.ServiceName,
-						Port: networkingv1.ServiceBackendPort{
-							Number: 8443,
-						},
-					},
-				},
-			})
-		} else {
-			// PRODUCTION: Single rule for code-server (port 8443)
-			// Code-server proxies /xterm.js to agent on port 8376
-			paths = append(paths, networkingv1.HTTPIngressPath{
-				Path:     "/",
-				PathType: func() *networkingv1.PathType { p := networkingv1.PathTypePrefix; return &p }(),
-				Backend: networkingv1.IngressBackend{
-					Service: &networkingv1.IngressServiceBackend{
-						Name: params.ServiceName,
-						Port: networkingv1.ServiceBackendPort{
-							Number: 8443,
-						},
-					},
-				},
-			})
-		}
-
 		rules = append(rules, networkingv1.IngressRule{
 			Host: params.Path + "." + params.Host,
 			IngressRuleValue: networkingv1.IngressRuleValue{
 				HTTP: &networkingv1.HTTPIngressRuleValue{
-					Paths: paths,
+					Paths: []networkingv1.HTTPIngressPath{
+						{
+							Path:     "/",
+							PathType: func() *networkingv1.PathType { p := networkingv1.PathTypePrefix; return &p }(),
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: params.ServiceName,
+									Port: networkingv1.ServiceBackendPort{
+										Number: 8443,
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		})
