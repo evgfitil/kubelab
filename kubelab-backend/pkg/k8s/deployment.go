@@ -160,14 +160,14 @@ func constructDeployment(name, namespace, image string, replicas int32, host str
 							Name:  "code-server",
 							Image: env.Config.CodeServerImage,
 							Env: []v1.EnvVar{
-								// {
-								// 	Name:  "PUID",
-								// 	Value: "1001",
-								// },
-								// {
-								// 	Name:  "PGID",
-								// 	Value: "1001",
-								// },
+								{
+									Name:  "PUID",
+									Value: "1001",
+								},
+								{
+									Name:  "PGID",
+									Value: "1001",
+								},
 								{
 									Name:  "DEFAULT_WORKSPACE",
 									Value: "/home/kubelab-agent/exercise",

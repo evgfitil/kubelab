@@ -48,19 +48,16 @@
   }
 
   $: {
-    // open target blank new tab with the url
     let lab_session_id = data.pathname.split("/")[2];
     let exercise_id = window.location.pathname.split("/")[3];
-    let agentHost = window.location.host === "localhost:5173" ? "kubelab.ch" : window.location.host;
-    codeUrl =
-      "https://kubelab-" +
-      lab_session_id +
-      "-" +
-      exercise_id +
-      "-" +
-      client.authStore.model?.id +
-      "." +
-      agentHost;
+
+    // Detect local development environment (same logic as Console.svelte)
+    const isLocalDev = window.location.host.includes("localhost") || window.location.host.includes("nip.io");
+    const protocol = isLocalDev ? "http" : "https";
+    const baseHost = isLocalDev ? "127.0.0.1.nip.io" : window.location.host;
+    const namespace = `kubelab-${lab_session_id}-${exercise_id}-${client.authStore.model?.id}`;
+
+    codeUrl = `${protocol}://${namespace}.${baseHost}`;
   }
 
   async function getMarkdown() {
