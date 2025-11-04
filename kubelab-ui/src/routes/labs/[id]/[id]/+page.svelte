@@ -51,9 +51,15 @@
     // open target blank new tab with the url
     let lab_session_id = data.pathname.split("/")[2];
     let exercise_id = window.location.pathname.split("/")[3];
-    let agentHost = window.location.host === "localhost:5173" ? "kubelab.ch" : window.location.host;
+    const isLocalDev = window.location.host.includes("localhost") || window.location.host.includes("nip.io");
+    let agentHost = isLocalDev
+      ? "127.0.0.1.nip.io"
+      : window.location.host === "localhost:5173"
+        ? "kubelab.ch"
+        : window.location.host;
     codeUrl =
-      "https://kubelab-" +
+      (isLocalDev ? "http" : "https") +
+      "://kubelab-" +
       lab_session_id +
       "-" +
       exercise_id +

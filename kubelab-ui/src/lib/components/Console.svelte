@@ -67,9 +67,14 @@
   const initializeWebSocket = () => {
     const lab_session_id = window.location.pathname.split("/")[2];
     const exercise_id = window.location.pathname.split("/")[3];
-    // if dev mode the agentHost is kubelab.ch
-    const agentHost =
-      window.location.host === "localhost:5173" ? "kubelab.ch" : window.location.host;
+    // if dev mode the agentHost is 127.0.0.1.nip.io or kubelab.ch
+    const isLocalDev =
+      window.location.host.includes("localhost") || window.location.host.includes("nip.io");
+    const agentHost = isLocalDev
+      ? "127.0.0.1.nip.io"
+      : window.location.host === "localhost:5173"
+        ? "kubelab.ch"
+        : window.location.host;
 
     agentUrl =
       agentHost +
@@ -85,7 +90,7 @@
       socket.close();
     }
     terminal.reset();
-    socket = new WebSocket("wss://" + agentUrl + "/xterm.js");
+    socket = new WebSocket((isLocalDev ? "ws" : "wss") + "://" + agentUrl + "/xterm.js");
 
     socket.binaryType = "arraybuffer";
 

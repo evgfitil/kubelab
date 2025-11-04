@@ -35,3 +35,9 @@ dist/
 _temp/
 local_userlist_november.csv
 venv/
+
+# Local development
+.local-dev/
+
+# Project-specific Claude instructions
+CLAUDE.md

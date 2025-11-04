@@ -35,6 +35,11 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 		"nginx.org/websocket-services":                            params.ServiceName,
 	}
 
+	// Disable SSL redirect for local development
+	if env.Config.Local {
+		annotations["nginx.ingress.kubernetes.io/ssl-redirect"] = "false"
+	}
+
 	var rules []networkingv1.IngressRule
 	if params.UseFirstRule {
 		annotations["nginx.ingress.kubernetes.io/rewrite-target"] = "/$2"
@@ -83,6 +88,19 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 		})
 	}
 
+	ingressSpec := networkingv1.IngressSpec{
+		IngressClassName: func() *string { s := env.Config.IngressClass; return &s }(),
+		Rules:            rules,
+	}
+
+	if !env.Config.Local {
+		ingressSpec.TLS = []networkingv1.IngressTLS{
+			{
+				SecretName: env.Config.TlsSecretName,
+			},
+		}
+	}
+
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: params.Name + (func() string {
@@ -101,15 +119,7 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 				"kubelab.ch/displayName": util.StringParser(params.UserRecord.GetString("name")),
 			},
 		},
-		Spec: networkingv1.IngressSpec{
-			IngressClassName: func() *string { s := env.Config.IngressClass; return &s }(),
-			TLS: []networkingv1.IngressTLS{
-				{
-					SecretName: env.Config.TlsSecretName,
-				},
-			},
-			Rules: rules,
-		},
+		Spec: ingressSpec,
 	}
 
 	return Clientset.NetworkingV1().Ingresses(params.Namespace).Create(Ctx, ingress, metav1.CreateOptions{})
