@@ -35,6 +35,11 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 		"nginx.org/websocket-services":                            params.ServiceName,
 	}
 
+	// Disable SSL redirect for local development
+	if env.Config.Local {
+		annotations["nginx.ingress.kubernetes.io/ssl-redirect"] = "false"
+	}
+
 	var rules []networkingv1.IngressRule
 	if params.UseFirstRule {
 		annotations["nginx.ingress.kubernetes.io/rewrite-target"] = "/$2"
@@ -60,6 +65,11 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 			},
 		})
 	} else {
+		port := int32(8443)
+		if env.Config.Local {
+			port = 8376
+		}
+
 		rules = append(rules, networkingv1.IngressRule{
 			Host: params.Path + "." + params.Host,
 			IngressRuleValue: networkingv1.IngressRuleValue{
@@ -72,7 +82,7 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 								Service: &networkingv1.IngressServiceBackend{
 									Name: params.ServiceName,
 									Port: networkingv1.ServiceBackendPort{
-										Number: 8443,
+										Number: port,
 									},
 								},
 							},
@@ -81,6 +91,19 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 				},
 			},
 		})
+	}
+
+	ingressSpec := networkingv1.IngressSpec{
+		IngressClassName: func() *string { s := env.Config.IngressClass; return &s }(),
+		Rules:            rules,
+	}
+
+	if !env.Config.Local {
+		ingressSpec.TLS = []networkingv1.IngressTLS{
+			{
+				SecretName: env.Config.TlsSecretName,
+			},
+		}
 	}
 
 	ingress := &networkingv1.Ingress{
@@ -101,15 +124,7 @@ func CreateIngress(params IngressParams) (*networkingv1.Ingress, error) {
 				"kubelab.ch/displayName": util.StringParser(params.UserRecord.GetString("name")),
 			},
 		},
-		Spec: networkingv1.IngressSpec{
-			IngressClassName: func() *string { s := env.Config.IngressClass; return &s }(),
-			TLS: []networkingv1.IngressTLS{
-				{
-					SecretName: env.Config.TlsSecretName,
-				},
-			},
-			Rules: rules,
-		},
+		Spec: ingressSpec,
 	}
 
 	return Clientset.NetworkingV1().Ingresses(params.Namespace).Create(Ctx, ingress, metav1.CreateOptions{})

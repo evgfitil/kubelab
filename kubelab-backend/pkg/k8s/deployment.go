@@ -132,7 +132,13 @@ func constructDeployment(name, namespace, image string, replicas int32, host str
 								},
 							},
 							// --allowed-hostnames
-							Args: []string{"--allowed-hostnames", "*," + host},
+						Args: func() []string {
+							allowedHosts := "*," + host
+							if env.Config.Local {
+								allowedHosts += "," + codeServerPath + ".127.0.0.1.nip.io"
+							}
+							return []string{"--allowed-hostnames", allowedHosts}
+						}(),
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      "kubeconfig-writable",
