@@ -20,6 +20,17 @@ export async function login(
     await client.collection("users").authWithPassword(email, password);
 }
 
+export async function loginWithOAuth2(provider: string) {
+    const authData = await client.collection('users').authWithOAuth2({
+        provider: provider
+    });
+
+    if (authData) {
+        currentUser.set(authData.record);
+        return authData;
+    }
+}
+
 export function logout() {
     client.authStore.clear();
     currentUser.set(null);
