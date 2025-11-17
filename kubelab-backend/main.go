@@ -63,6 +63,10 @@ func main() {
 	// call this only if you want to use the configurable "hooks" functionality
 	hooks.PocketBaseInit(app)
 
+	// register OAuth hooks
+	hooks.RegisterOAuthHooks(app)
+	hooks.RegisterUserAvatarHook(app)
+
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// serves static files from the provided public dir (if exists)
 		e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS(publicDirFlag), true))
